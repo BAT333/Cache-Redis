@@ -1,0 +1,146 @@
+Habilitando o Cache em uma Aplicação Spring
+Primeiramente, você precisa habilitar o cache na classe principal da sua aplicação. Para isso, adicione a anotação @EnableCaching:
+java
+Copiar código
+@SpringBootApplication
+@EnableCaching
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+Agora, escolha um método que tenha um custo elevado de processamento ou acesso ao banco de dados e aplique a anotação @Cacheable. Isso irá garantir que os resultados desse método sejam armazenados em cache.
+Exemplo:
+
+java
+Copiar código
+@GetMapping
+@Cacheable(value = "empresas")
+public ResponseEntity<List<DataEmpresa>> allEmpresa() {
+    return ResponseEntity.ok(service.all());
+}
+Nesse exemplo, o método allEmpresa será armazenado no cache com o nome "empresas".
+
+Limpar o Cache de Forma Manual
+Você pode criar um serviço para limpar o cache de maneira programática, como mostrado abaixo:
+
+java
+Copiar código
+@Service
+public class CacheService {
+
+    @Autowired
+    private CacheManager cacheManager;
+
+    public void evictAllCacheValues(String cacheName) {
+        Objects.requireNonNull(cacheManager.getCache(cacheName)).clear();
+    }
+}
+E um controlador para expor essa funcionalidade:
+
+java
+Copiar código
+@RestController
+public class CacheController {
+
+    @Autowired
+    private CacheService cacheService;
+
+    @PostMapping("/cache/clear")
+    public void clearCache(@RequestParam("cacheName") String cacheName) {
+        cacheService.evictAllCacheValues(cacheName);
+    }
+}
+Nesse exemplo, você pode limpar o cache chamando o endpoint /cache/clear e passando o nome do cache como parâmetro.
+
+Limpar Cache Automaticamente (Agendado)
+Para limpar o cache automaticamente, você pode agendar uma tarefa que faça isso periodicamente:
+
+Habilite o agendamento de tarefas na classe principal da aplicação com @EnableScheduling:
+java
+Copiar código
+@SpringBootApplication
+@EnableCaching
+@EnableScheduling
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+Crie uma classe de agendamento para limpar o cache:
+java
+Copiar código
+@Component
+@Log4j2
+public class CacheAgendado {
+
+    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
+    @CacheEvict("empresas")
+    public void limparCacheEmpresas() {
+        log.info("Cache 'empresas' limpo em: " + LocalDateTime.now());
+    }
+}
+Nesse exemplo, o cache "empresas" será limpo a cada 30 segundos.
+
+Limpar Cache após Operações de Atualização
+Se você atualizar ou deletar dados no banco, é importante garantir que o cache seja invalidado para evitar inconsistências. Use @CacheEvict para limpar o cache após essas operações:
+
+java
+Copiar código
+@Service
+public class EmpresaService {
+
+    @CacheEvict(value = "empresas", allEntries = true)
+    public Empresa atualizarEmpresa(Empresa empresa) {
+        return empresaRepository.save(empresa);
+    }
+
+    @CacheEvict(value = "empresas", allEntries = true)
+    public void deletarEmpresa(Long id) {
+        empresaRepository.deleteById(id);
+    }
+}
+Neste caso, após atualizar ou deletar uma empresa, todo o cache "empresas" será limpo para garantir que os dados mais recentes sejam buscados diretamente do banco de dados.
+
+Resumo dos Principais Parâmetros do @CacheEvict
+value: Nome do cache que será limpo.
+key: Limpa uma chave específica no cache.
+allEntries: Remove todas as entradas do cache quando definido como true.
+beforeInvocation: Quando definido como true, o cache é limpo antes da execução do método.
+Exemplo:
+
+java
+Copiar código
+@CacheEvict(value = "empresas", allEntries = true)
+public void atualizarEmpresa(Empresa empresa) {
+    // lógica de atualização
+}
+ // Método para inserir um novo registro
+    @CacheEvict(value = "empresas", allEntries = true)
+    public Empresa criarEmpresa(Empresa empresa) {
+        return empresaRepository.save(empresa); // Salva a empresa no banco de dados
+    }
+
+
+    Outros Cenários:
+    Limpar cache específico: Se você quiser apenas remover uma entrada específica do cache ao invés de tudo, você pode usar @CacheEvict passando a chave do cache.
+
+    Exemplo:
+
+    java
+    Copiar código
+    @CacheEvict(value = "empresas", key = "#id")
+    public void deletarEmpresa(Long id) {
+        empresaRepository.deleteById(id);
+    }
+    Ativação do Cache:
+    Não se esqueça de que o cache deve ser ativado no seu projeto com @EnableCaching na classe de configuração principal:
+
+    java
+    Copiar código
+    @Configuration
+    @EnableCaching
+    public class CacheConfig {
+        // Configurações adicionais de cache, se necessário
+    }
+    Dessa forma, o cache será invalidado automaticamente quando você criar, atualizar ou deletar registros.
