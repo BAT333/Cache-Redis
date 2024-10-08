@@ -144,3 +144,32 @@ public void atualizarEmpresa(Empresa empresa) {
         // Configurações adicionais de cache, se necessário
     }
     Dessa forma, o cache será invalidado automaticamente quando você criar, atualizar ou deletar registros.
+    CACHE COM CODIÇÃO
+    @Cacheable(value = "estados", condition = "#estado.equalsIgnoreCase('MG')")
+        public List<IbgeResponse> findAllCidades(String estado) {
+            System.out.println("vai buscar no IBGE");
+            return ibge.findAllCidades(estado);
+        }
+        #estado.equalsIgnoreCase('MG')-> SO QUERO DEIXAR NO CACHE ESTADOS DE MG
+
+
+NOSSO CACHE ESTA SENDO GUARDADO EM MEMORIA AGORA VAMOS DELEGAR ISSO PARA OUTRO SERVIÇO QUE SE
+CHAMA Redis
+
+Redis (REmote DIctionary Server) é um software de código aberto que serve para armazenar dados na memória, sendo utilizado como banco de dados, cache ou broker de mensagens.
+O Redis é uma boa opção para aplicações que exigem alta velocidade de leitura e gravação, como jogos, tecnologia de anúncios, IoT, aplicações web e móveis
+
+como colocar isso na nossa aplicação
+primeiro precisa add as dependencia do redis
+        <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+segundo passo colocar ele no proprites:
+spring.data.redis.port=6379
+spring.data.redis.host=localhost
+spring.cache.type=redis
+--------- onde ele vai rodar a porta que ele vai rodar
+
+e por fim todas class, records etc vão vira cache tem que ser serializada e implementar esse metodo
