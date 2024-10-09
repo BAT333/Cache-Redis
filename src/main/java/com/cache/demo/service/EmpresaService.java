@@ -23,4 +23,9 @@ public class EmpresaService {
             empresa.save(new Empresa(Integer.toUnsignedLong(i),"a"+i));
         }
     }
+
+    public DataEmpresa update(Long id) {
+        var e =  this.empresa.findById(id);
+        return e.map(DataEmpresa::new).get();
+    }
 }

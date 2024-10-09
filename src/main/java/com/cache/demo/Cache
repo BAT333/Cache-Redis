@@ -173,3 +173,32 @@ spring.cache.type=redis
 --------- onde ele vai rodar a porta que ele vai rodar
 
 e por fim todas class, records etc vão vira cache tem que ser serializada e implementar esse metodo
+
+
+Atulização
+  @PutMapping("{id}")
+    @CachePut(value ="empresas")
+    public ResponseEntity<DataEmpresa> update(@PathVariable("id") Long id){
+        return ResponseEntity.ok(this.service.update(id));
+    }
+
+sempre que atualizar limpa cache
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserService {
+Exemplo de Cache com Chave em Spring
+    @Autowired
+    private UserRepository userRepository;
+
+    // Método para buscar um usuário pelo ID com cache
+    @Cacheable(value = "users", key = "#userId")
+    public User findUserById(Long userId) {
+        // Simula um método custoso, como uma consulta ao banco de dados
+        return userRepository.findById(userId).orElse(null);
+    }
+}
